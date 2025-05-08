@@ -3,9 +3,6 @@
 
 ### About the Project
 
-{ADD EXPERIMENTAL STATUS BADGE IF PROJECT IS IN DEVELOPMENT}
-[![status: experimental](https://github.com/GIScience/badges/raw/master/status/experimental.svg)](https://github.com/GIScience/badges#experimental)
-
 This repository holds code for the WLMDS Staging Tables - pulling the data for these and uploading into SWPAT table for use
 
 _**Note:** Only public or fake data are shared in this repository._
