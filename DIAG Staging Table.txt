@@ -1,0 +1,203 @@
+---staging table to be creted in datamart  [SWPat].[TABLE.STAGING.WLMDS_DIAG]
+
+
+;with cte_diag as (
+select 'Diagnostics' as Dataset,
+
+case when ORGANISATION_SITE_IDENTIFIER_OF_TREATMENT in ('P1B7M', 'M5E1S', 'A0C5S', 'L6O7H','NT202', 'NT206', 'NT211', 'NT215', 'NT233', 'NT238') THEN ORGANISATION_SITE_IDENTIFIER_OF_TREATMENT
+WHEN Organisation_Identifier_Code_Of_Provider like 'R%' then left(Organisation_Identifier_Code_Of_Provider,3) when h.Organisation_Name is null then o.ORGANISATION_IDENTIFIER_CODE_OF_PROVIDER when len(ORGANISATION_SITE_IDENTIFIER_OF_TREATMENT)>3 then ORGANISATION_SITE_IDENTIFIER_OF_TREATMENT
+else Organisation_Identifier_Code_Of_Provider end as 'Organisation_Identifier_Code_Of_Provider',
+DerWeekEnding,
+Waiting_List_Type,
+Diagnostic_Modality,
+
+case when [Diagnostic_Clock_Start_Date] > [DerWeekEnding] THEN 'Start Date for Review'
+when cast (floor (DATEDIFF(DAY, Diagnostic_Clock_Start_Date, DerWeekEnding)/7)+1  as decimal) >0 and cast (floor (DATEDIFF(DAY, Diagnostic_Clock_Start_Date, DerWeekEnding)/7)+1 as decimal)<=6 THEN '0-6 Weeks'
+when (DATEDIFF (WEEK, Diagnostic_Clock_Start_Date, DerWeekEnding)) is null THEN 'Unknown Clock Start'
+when cast (floor (DATEDIFF(DAY, Diagnostic_Clock_Start_Date, DerWeekEnding)/7)+1  as decimal) >6 and  cast (floor (DATEDIFF(DAY, Diagnostic_Clock_Start_Date, DerWeekEnding)/7)+1  as decimal) <=13 THEN '>6-13 Weeks'
+when cast (floor (DATEDIFF(DAY, Diagnostic_Clock_Start_Date, DerWeekEnding)/7)+1  as decimal)>13 and cast (floor (DATEDIFF(DAY, Diagnostic_Clock_Start_Date, DerWeekEnding)/7)+1  as decimal)  <=18 THEN '>13-18 Weeks'
+when cast (floor (DATEDIFF(DAY, Diagnostic_Clock_Start_Date, DerWeekEnding)/7)+1  as decimal) >18 and cast (floor (DATEDIFF(DAY, Diagnostic_Clock_Start_Date, DerWeekEnding)/7)+1  as decimal) <=26 THEN '>18-26 Weeks'
+when cast (floor (DATEDIFF(DAY, Diagnostic_Clock_Start_Date, DerWeekEnding)/7)+1  as decimal) >26 and  cast (floor (DATEDIFF(DAY, Diagnostic_Clock_Start_Date, DerWeekEnding)/7)+1  as decimal)  <=40 THEN '>26-40 Weeks'
+when cast(floor (DATEDIFF(DAY, Diagnostic_Clock_Start_Date, DerWeekEnding)/7)+1  as decimal) >40 and  cast (floor (DATEDIFF(DAY, Diagnostic_Clock_Start_Date, DerWeekEnding)/7)+1  as decimal) <=52 THEN '>40-52 Weeks'
+when cast (floor (DATEDIFF(DAY, Diagnostic_Clock_Start_Date, DerWeekEnding)/7)+1  as decimal) >52 and  cast (floor (DATEDIFF(DAY, Diagnostic_Clock_Start_Date, DerWeekEnding)/7)+1  as decimal) <=78 THEN '>52-78 Weeks'
+when cast (floor (DATEDIFF(DAY, Diagnostic_Clock_Start_Date, DerWeekEnding)/7)+1  as decimal) >78 and cast (floor (DATEDIFF(DAY, Diagnostic_Clock_Start_Date, DerWeekEnding)/7)+1  as decimal) <=104 THEN '>78-104 Weeks'
+when (cast(DATEDIFF(DAY, Diagnostic_Clock_Start_Date, DerWeekEnding) as decimal)/7 >104) THEN '>104 Weeks'
+
+ELSE '0-6 Weeks' END AS 'Weeks Wait Band',
+
+count(DerWeekEnding) as 'Patients_Waiting'
+from [Reporting_MESH_WLMDS].[Diagnostics] as o
+--[Reporting].[MESH_WLMDS_Diagnostics] as o
+
+left join [Reporting_UKHD_ODS].[Provider_Hierarchies] as h on h.[Organisation_Code] = o.ORGANISATION_SITE_IDENTIFIER_OF_TREATMENT
+
+where [DerWeekEnding]  >= '2022-04-01'
+and der_NONC_Code in ('1','2','3')
+
+group by
+Waiting_List_Type,
+Diagnostic_Modality,
+
+DerWeekEnding,
+Diagnostic_Clock_Start_Date,
+ORGANISATION_SITE_IDENTIFIER_OF_TREATMENT,
+Organisation_Identifier_Code_Of_Provider,
+h.Organisation_Name )
+
+
+
+
+
+
+,cte_STAGINGWLMDS_DIAG as (
+select o.*,
+case WHEN h.Organisation_Code = 'RBZ' THEN 'RH8'
+WHEN h.Organisation_Code = 'RA4' THEN 'RH5' 
+ELSE H.Organisation_Code END AS 'Organisation_Code',
+CASE WHEN h.Organisation_Name = 'NORTHERN DEVON HEALTHCARE NHS TRUST' THEN 'ROYAL DEVON UNIVERSITY HEALTHCARE NHS FOUNDATION TRUST' 
+WHEN h.Organisation_Name = 'YEOVIL DISTRICT HOSPITAL NHS FOUNDATION TRUST' THEN 'SOMERSET NHS FOUNDATION TRUST'
+ELSE H.Organisation_Name END AS 'Organisation_Name' ,
+h.STP_Name 
+,h.ODS_Organisation_Type
+from cte_diag as o
+left join [Reporting_UKHD_ODS].[Provider_Hierarchies] as h on h.[Organisation_Code] = o.Organisation_Identifier_Code_Of_Provider
+where (h.ODS_Organisation_Type like 'NHS%' OR h.ODS_Organisation_Type like 'Independent%' OR h.ODS_Organisation_Type like 'Care%')
+and h.Region_Code = 'y58')
+
+  
+  
+,cte_allwaits as (SELECT  'Weekly' as 'DataType'
+,OrgType = 'Provider'
+,Organisation_Code 
+,Organisation_Name
+,cast(DerWeekEnding as date) as Effective_Snapshot_Date
+      ,CASE WHEN [Diagnostic_Modality] in  ('7','07') THEN 'Cardiology - Echocardiography'
+	WHEN [Diagnostic_Modality] in  ('8','08') THEN 'Cardiology - Electrophysiology'
+	WHEN [Diagnostic_Modality] in  ('12') THEN 'Colonoscopy'
+	WHEN [Diagnostic_Modality] in  ('2','02') THEN 'Computed Tomography'
+	WHEN [Diagnostic_Modality] in  ('14') THEN 'Cystoscopy'
+	WHEN [Diagnostic_Modality] in  ('5','05') THEN 'DEXA Scan'
+	WHEN [Diagnostic_Modality] in  ('13')THEN 'Flexi Sigmoidoscopy'
+	WHEN [Diagnostic_Modality] in  ('15')THEN  'Gastroscopy'
+	WHEN [Diagnostic_Modality] in  ('1','01')THEN  'Magnetic Resonance Imaging'
+	WHEN [Diagnostic_Modality] in  ('9','09')THEN  'Neurophysiology - Peripheral Neurophysiology'
+	WHEN [Diagnostic_Modality] in  ('10')THEN  'Respiratory physiology - Sleep Studies'
+	WHEN [Diagnostic_Modality] in  ('11')THEN  'Urodynamics - Pressures & Flows'
+	WHEN [Diagnostic_Modality] in  ('3','03')THEN 'Non-obstetric Ultrasound'
+	WHEN [Diagnostic_Modality] IN ('4','04') then 'Barium Enema'
+	When [Diagnostic_Modality] IN ('6','06') then 'Audiology - Audiology Assessments'
+	WHEN [Diagnostic_Modality] in  ('80')THEN  'Gastrointestinal physiology'
+	WHEN [Diagnostic_Modality] in  ('81')THEN 'Ophthalmic and vision science'
+	WHEN [Diagnostic_Modality] IN ('82') then 'Respiratory physiology - Not Sleep Studies'
+	When [Diagnostic_Modality] IN ('83') then 'Vascular science'
+	ELSE [Diagnostic_Modality]  END AS 'Diagnostic_Test_Name' 
+	  ,'Diagnostic waits (Total)' as [Measure]
+   ,sum(cast(Patients_Waiting as numeric)) as 'Number_of_Patients'
+   
+  FROM cte_STAGINGWLMDS_DIAG
+
+  where ODS_Organisation_Type like '%NHS%'
+ -- AND [Diagnostic_Modality]  IN ('7','07','8','08','12','2','02','14','5','05','13','15','1','01','9','09','10','11','3','03','4','04','6','06')
+  and Waiting_List_Type NOT IN ('INON','ONON','PLD','PLN')
+
+  group by Organisation_Code,Organisation_Name,DerWeekEnding,Diagnostic_Modality)
+  
+
+  ,cte_6weeks
+
+  as (
+
+  SELECT  'Weekly' as 'DataType'
+,OrgType = 'Provider'
+,Organisation_Code 
+,Organisation_Name
+,cast(DerWeekEnding as date) as Effective_Snapshot_Date
+      ,CASE WHEN [Diagnostic_Modality] in  ('7','07') THEN 'Cardiology - Echocardiography'
+	WHEN [Diagnostic_Modality] in  ('8','08') THEN 'Cardiology - Electrophysiology'
+	WHEN [Diagnostic_Modality] in  ('12') THEN 'Colonoscopy'
+	WHEN [Diagnostic_Modality] in  ('2','02') THEN 'Computed Tomography'
+	WHEN [Diagnostic_Modality] in  ('14') THEN 'Cystoscopy'
+	WHEN [Diagnostic_Modality] in  ('5','05') THEN 'DEXA Scan'
+	WHEN [Diagnostic_Modality] in  ('13')THEN 'Flexi Sigmoidoscopy'
+	WHEN [Diagnostic_Modality] in  ('15')THEN  'Gastroscopy'
+	WHEN [Diagnostic_Modality] in  ('1','01')THEN  'Magnetic Resonance Imaging'
+	WHEN [Diagnostic_Modality] in  ('9','09')THEN  'Neurophysiology - Peripheral Neurophysiology'
+	WHEN [Diagnostic_Modality] in  ('10')THEN  'Respiratory physiology - Sleep Studies'
+	WHEN [Diagnostic_Modality] in  ('11')THEN  'Urodynamics - Pressures & Flows'
+	WHEN [Diagnostic_Modality] in  ('3','03')THEN 'Non-obstetric Ultrasound'
+	WHEN [Diagnostic_Modality] IN ('4','04') then 'Barium Enema'
+	When [Diagnostic_Modality] IN ('6','06') then 'Audiology - Audiology Assessments'
+	WHEN [Diagnostic_Modality] in  ('80')THEN  'Gastrointestinal physiology'
+	WHEN [Diagnostic_Modality] in  ('81')THEN 'Ophthalmic and vision science'
+	WHEN [Diagnostic_Modality] IN ('82') then 'Respiratory physiology - Not Sleep Studies'
+	When [Diagnostic_Modality] IN ('83') then 'Vascular science'
+	ELSE [Diagnostic_Modality]  END AS 'Diagnostic_Test_Name' 
+	  ,'Diagnostic waits (< 6 weeks)' as [Measure]
+   ,sum(cast(Patients_Waiting as numeric)) as 'Number_of_Patients'
+   
+  FROM cte_STAGINGWLMDS_DIAG
+
+  where ODS_Organisation_Type like '%NHS%'
+ -- and [Diagnostic_Modality]  IN ('7','07','8','08','12','2','02','14','5','05','13','15','1','01','9','09','10','11','3','03','4','04','6','06')
+  and [Weeks Wait Band]  in ('0-6 Weeks')
+   and Waiting_List_Type NOT IN ('INON','ONON','PLD','PLN')
+  group by Organisation_Code,Organisation_Name,DerWeekEnding,Diagnostic_Modality)
+
+  ,cte_26weeks
+
+  as (
+
+  SELECT  'Weekly' as 'DataType'
+,OrgType = 'Provider'
+,Organisation_Code 
+,Organisation_Name
+,cast(DerWeekEnding as date) as Effective_Snapshot_Date
+      ,CASE WHEN [Diagnostic_Modality] in  ('7','07') THEN 'Cardiology - Echocardiography'
+	WHEN [Diagnostic_Modality] in  ('8','08') THEN 'Cardiology - Electrophysiology'
+	WHEN [Diagnostic_Modality] in  ('12') THEN 'Colonoscopy'
+	WHEN [Diagnostic_Modality] in  ('2','02') THEN 'Computed Tomography'
+	WHEN [Diagnostic_Modality] in  ('14') THEN 'Cystoscopy'
+	WHEN [Diagnostic_Modality] in  ('5','05') THEN 'DEXA Scan'
+	WHEN [Diagnostic_Modality] in  ('13')THEN 'Flexi Sigmoidoscopy'
+	WHEN [Diagnostic_Modality] in  ('15')THEN  'Gastroscopy'
+	WHEN [Diagnostic_Modality] in  ('1','01')THEN  'Magnetic Resonance Imaging'
+	WHEN [Diagnostic_Modality] in  ('9','09')THEN  'Neurophysiology - Peripheral Neurophysiology'
+	WHEN [Diagnostic_Modality] in  ('10')THEN  'Respiratory physiology - Sleep Studies'
+	WHEN [Diagnostic_Modality] in  ('11')THEN  'Urodynamics - Pressures & Flows'
+	WHEN [Diagnostic_Modality] in  ('3','03')THEN 'Non-obstetric Ultrasound'
+	WHEN [Diagnostic_Modality] IN ('4','04') then 'Barium Enema'
+	When [Diagnostic_Modality] IN ('6','06') then 'Audiology - Audiology Assessments'
+	WHEN [Diagnostic_Modality] in  ('80')THEN  'Gastrointestinal physiology'
+	WHEN [Diagnostic_Modality] in  ('81')THEN 'Ophthalmic and vision science'
+	WHEN [Diagnostic_Modality] IN ('82') then 'Respiratory physiology - Not Sleep Studies'
+	When [Diagnostic_Modality] IN ('83') then 'Vascular science'
+	ELSE [Diagnostic_Modality]  END AS 'Diagnostic_Test_Name' 
+	  ,'Diagnostic waits (> 26 weeks)' as [Measure]
+ ,sum(cast(Patients_Waiting as numeric)) as 'Number_of_Patients'
+ 
+  FROM cte_STAGINGWLMDS_DIAG
+
+  where ODS_Organisation_Type like '%NHS%'
+ -- and [Diagnostic_Modality]  IN ('7','07','8','08','12','2','02','14','5','05','13','15','1','01','9','09','10','11','3','03','4','04','6','06')
+  and [Weeks Wait Band]  in ('>26-40 Weeks','>40-52 Weeks','>52-78 Weeks','>78-104 Weeks','>104 Weeks')
+   and Waiting_List_Type NOT IN ('INON','ONON','PLD','PLN')
+   and DerWeekEnding > '2022-04-01'
+  group by Organisation_Code,Organisation_Name,DerWeekEnding,Diagnostic_Modality)
+
+
+
+
+
+
+  ,cte_final as (
+  select * from cte_allwaits
+
+  union
+
+  select * from cte_6weeks
+
+  union 
+
+  select * from cte_26weeks
+  )
+  select * from cte_final

@@ -1,0 +1,172 @@
+
+---staging table to be creted in datamart  [SWPat].[TABLE.STAGING.WLMDS_OPEN_PATHWAYS_TFC_LW]
+
+;with cte_vw_WLMDS_Open_ASI_combined as (
+SELECT 
+
+o.*
+
+FROM (
+
+SELECT 
+
+Dataset = 'Open Pathways'
+,ORGANISATION_IDENTIFIER_CODE_OF_PROVIDER = CASE 
+	WHEN ORGANISATION_SITE_IDENTIFIER_OF_TREATMENT IN ('P1B7M', 'M5E1S', 'A0C5S', 'L6O7H','NT202', 'NT206', 'NT211', 'NT215', 'NT233', 'NT238') THEN ORGANISATION_SITE_IDENTIFIER_OF_TREATMENT
+	WHEN Organisation_Identifier_Code_Of_Provider LIKE 'RBZ%' THEN 'RH8'
+	WHEN Organisation_Identifier_Code_Of_Provider LIKE 'RA4%' THEN 'RH5'
+	WHEN Organisation_Identifier_Code_Of_Provider LIKE 'R%' THEN LEFT(Organisation_Identifier_Code_Of_Provider,3) 
+	WHEN ORGANISATION_IDENTIFIER_CODE_OF_PROVIDER = 'NFH' THEN ORGANISATION_IDENTIFIER_CODE_OF_PROVIDER
+	WHEN LEFT(ORGANISATION_IDENTIFIER_CODE_OF_PROVIDER,3) = 'AXG' THEN 'AXG'
+	WHEN LEFT(ORGANISATION_IDENTIFIER_CODE_OF_PROVIDER,3) = 'NR5' THEN 'NR5'
+		WHEN ORGANISATION_SITE_IDENTIFIER_OF_TREATMENT = 'NXPNXP'   THEN 'NXP'
+		WHEN Organisation_Identifier_Code_Of_Provider = 'R9998' THEN 'NLX'
+	WHEN LEN(ORGANISATION_SITE_IDENTIFIER_OF_TREATMENT) > 3   THEN ORGANISATION_SITE_IDENTIFIER_OF_TREATMENT
+	ELSE Organisation_Identifier_Code_Of_Provider END
+
+,Activity_Treatment_Function_Code
+,Tci_Date
+,Outpatient_Future_Appointment_Date
+,DerWeekEnding
+,Priority_Type_Code
+,Diagnostic_Priority_Code
+,Procedure_Priority_Code
+,Waiting_List_Type
+,Referral_To_Treatment_Period_Start_Date
+
+,Time_waited = CAST(DATEDIFF(DAY, Referral_To_Treatment_Period_Start_Date, DerWeekEnding) AS DECIMAL)/7
+,Time_waited_Jan23 = CAST(DATEDIFF(DAY, Referral_To_Treatment_Period_Start_Date, '2023/01/31') AS DECIMAL)/7
+,Time_waited_Feb23 = CAST(DATEDIFF(DAY, Referral_To_Treatment_Period_Start_Date, '2023/02/28') AS DECIMAL)/7
+,Time_waited_Mar23 = CAST(DATEDIFF(DAY, Referral_To_Treatment_Period_Start_Date, '2023/03/31') AS DECIMAL)/7
+,Time_waited_Apr23 = CAST(DATEDIFF(DAY, Referral_To_Treatment_Period_Start_Date, '2023/04/30') AS DECIMAL)/7
+,Time_waited_May23 = CAST(DATEDIFF(DAY, Referral_To_Treatment_Period_Start_Date, '2023/05/31') AS DECIMAL)/7
+,Time_waited_Jun23 = CAST(DATEDIFF(DAY, Referral_To_Treatment_Period_Start_Date, '2023/06/30') AS DECIMAL)/7
+,Time_waited_Jul23 = CAST(DATEDIFF(DAY, Referral_To_Treatment_Period_Start_Date, '2023/07/31') AS DECIMAL)/7
+,Time_waited_Aug23 = CAST(DATEDIFF(DAY, Referral_To_Treatment_Period_Start_Date, '2023/08/31') AS DECIMAL)/7
+,Time_waited_Sep23 = CAST(DATEDIFF(DAY, Referral_To_Treatment_Period_Start_Date, '2023/09/30') AS DECIMAL)/7
+,Time_waited_Oct23 = CAST(DATEDIFF(DAY, Referral_To_Treatment_Period_Start_Date, '2023/10/31') AS DECIMAL)/7
+,Time_waited_Nov23 = CAST(DATEDIFF(DAY, Referral_To_Treatment_Period_Start_Date, '2023/11/30') AS DECIMAL)/7
+,Time_waited_Dec23 = CAST(DATEDIFF(DAY, Referral_To_Treatment_Period_Start_Date, '2023/12/31') AS DECIMAL)/7
+,Time_waited_Jan24 = CAST(DATEDIFF(DAY, Referral_To_Treatment_Period_Start_Date, '2024/01/31') AS DECIMAL)/7
+,Time_waited_Feb24 = CAST(DATEDIFF(DAY, Referral_To_Treatment_Period_Start_Date, '2024/02/29') AS DECIMAL)/7
+,Time_waited_Mar24 = CAST(DATEDIFF(DAY, Referral_To_Treatment_Period_Start_Date, '2024/03/31') AS DECIMAL)/7
+,Time_waited_Apr24 = CAST(DATEDIFF(DAY, Referral_To_Treatment_Period_Start_Date, '2024/04/30') AS DECIMAL)/7
+
+,Time_from_DTA = DATEDIFF(DAY, Decision_To_Admit_Date, DerWeekEnding)
+,Time_from_Review = DATEDIFF(DAY, Date_Of_Last_Priority_Review, DerWeekEnding)
+
+,Weeks_To_Jan23 = DATEDIFF(WEEK, DerWeekEnding, '2023/01/31')
+,Weeks_To_Feb23 = DATEDIFF(WEEK, DerWeekEnding, '2023/02/28') 
+,Weeks_To_Mar23 = DATEDIFF(WEEK, DerWeekEnding, '2023/03/31') 
+,Weeks_To_Apr23 = DATEDIFF(WEEK, DerWeekEnding, '2023/04/30') 
+,Weeks_To_May23 = DATEDIFF(WEEK, DerWeekEnding, '2023/05/30')
+,Weeks_To_Jun23 = DATEDIFF(WEEK, DerWeekEnding, '2023/06/30') 
+,Weeks_To_Jul23 = DATEDIFF(WEEK, DerWeekEnding, '2023/07/31') 
+,Weeks_To_Aug23 = DATEDIFF(WEEK, DerWeekEnding, '2023/08/31') 
+,Weeks_To_Sep23 = DATEDIFF(WEEK, DerWeekEnding, '2023/09/30') 
+,Weeks_To_Oct23 = DATEDIFF(WEEK, DerWeekEnding, '2023/10/31') 
+,Weeks_To_Nov23 = DATEDIFF(WEEK, DerWeekEnding, '2023/11/30') 
+,Weeks_To_Dec23 = DATEDIFF(WEEK, DerWeekEnding, '2023/12/31') 
+,Weeks_To_Jan24 = DATEDIFF(WEEK, DerWeekEnding, '2024/01/31') 
+,Weeks_To_Feb24 = DATEDIFF(WEEK, DerWeekEnding, '2024/02/29') 
+,Weeks_To_Mar24 = DATEDIFF(WEEK, DerWeekEnding, '2024/03/31')
+,Weeks_To_Apr24 = DATEDIFF(WEEK, DerWeekEnding, '2024/04/30') 
+
+,Der_Ageband_WeekEndingDate = CASE 
+
+	WHEN Der_Age_WeekEndingDate = '16' THEN '16'
+	WHEN Der_Age_WeekEndingDate = '17' THEN '17'
+	WHEN Der_Age_WeekEndingDate = '18' THEN '18' 
+	WHEN Der_Age_WeekEndingDate IN ('19','20', '21','22','23','24') THEN '19 - 24'
+	WHEN Der_Age_WeekEndingDate >= 25 THEN '25+'
+	ELSE Der_Ageband_WeekEndingDate END 
+	
+,Proposed_Procedure_Opcs_Code
+,Welsh_flag = CASE WHEN c.Region_Name = 'Wales region' THEN 'Yes' ELSE 'No' END
+,h.Organisation_Code
+,h.Organisation_Name
+,h.STP_Name 
+,h.ODS_Organisation_Type
+FROM [Reporting_MESH_WLMDS].[Open_ASI_Combined] o
+--Reporting.MESH_WLMDS_Open_ASI_Combined
+LEFT JOIN [Reporting_UKHD_ODS].[Commissioner_Hierarchies] c
+ON o.Organisation_Identifier_Code_Of_Commissioner = c.Organisation_Code
+
+LEFT JOIN [Reporting_UKHD_ODS].[Provider_Hierarchies] h 
+ON h.Organisation_Code = o.Organisation_Identifier_Code_Of_Provider
+
+WHERE Waiting_List_Type IN ('IRTT', 'ORTT','INON','ONON')
+AND o.Der_Reporting_Region_Name = 'South West'
+and der_NONC_Code in ('1','2','3')
+
+) o)
+
+,cte_wlmds_wl as (SELECT 
+
+DerWeekEnding
+
+,Data_source = 'WL MDS'
+,Prov_or_Comm = 'Provider'
+,b.[organisation_code] COLLATE Latin1_General_CI_AS AS Organisation_Code
+,Measure = 'Waiting List'
+,Treatment_Function_Code = 
+              CASE WHEN Activity_Treatment_Function_Code IN ('172','173') THEN '170' --inclusions in Cardiothoracic Surgery
+                     WHEN Activity_Treatment_Function_Code IN ('108','111','115') THEN '110' --inclusions in T&O
+                     WHEN Activity_Treatment_Function_Code IN ('144','145') THEN '140' --inclusions in Oral surgery
+                     WHEN Activity_Treatment_Function_Code IN ('100','101','110','120','130','140','150','160','170','300','301','320','330','340','400','410','430','502') 
+                                                                     THEN Activity_Treatment_Function_Code
+                     WHEN ACTIVITY_TREATMENT_FUNCTION_CODE IN ('180',
+'190','191','192','200','302','303','304','305','306','307','308','309','310','311','313','314','315','316','317','318','319','322','323','324','325','326','327','328','329','331','333','335','341','342','343','344','345','346','347','348','350','352','360','361','370','371','401','420',
+'422','424','431','450','451','460','461','501','503','504','505','834') THEN 'X02'
+WHEN ACTIVITY_TREATMENT_FUNCTION_CODE IN ('656','700','710','711','712','713','715','720','721','722','723','724','725','726','727','730') THEN 'X03'
+WHEN ACTIVITY_TREATMENT_FUNCTION_CODE IN ('560','650','651','652','653','654','655','657','658','659','660','661','662','663','670','673','675','677','800','811','812','822','840','920') THEN 'X06'
+WHEN ACTIVITY_TREATMENT_FUNCTION_CODE IN ('142','171','211','212','213','214','215','216','217','218','219','220','221','222','223','230','240','241','242','250','251',
+'252','253','254','255','256','257','258','259','260','261','262','263','264','270','280','290','291','321','421') THEN 'X04'
+WHEN ACTIVITY_TREATMENT_FUNCTION_CODE IN ('102','103','104','105','106','107','109','113','141','143','161','174') THEN 'X05'
+
+
+
+ELSE 'X01' END COLLATE Latin1_General_CI_AS
+
+,Number_of_patients = 1
+,Total_52ww = CASE WHEN Time_waited > 52 THEN 1 ELSE 0 END
+,Total_78ww = CASE WHEN Time_waited > 78 THEN 1 ELSE 0 END
+,Total_104ww = CASE WHEN Time_waited > 104 THEN 1 ELSE 0 END
+,Total_65ww = CASE WHEN Time_waited > 65 THEN 1 ELSE 0 END
+
+
+FROM cte_vw_WLMDS_Open_ASI_combined b 
+
+
+
+WHERE DerWeekEnding >= '2023-04-01'
+
+AND Waiting_List_Type in ('IRTT', 'ORTT'))
+
+--,cte_TABLESTAGING.WLMDS_OPEN_PATHWAYS_TFC_LW as (
+select  
+
+DerWeekEnding
+
+,Data_source
+,Prov_or_Comm
+,Organisation_Code
+,Measure
+,Treatment_Function_Code
+,sum(number_of_patients) as Number_of_Patients
+,Sum(total_52WW) AS 'Total_52ww'
+,Sum(Total_78ww) AS 'Total_78ww'
+,Sum(Total_104ww) AS 'Total_104ww'
+,Sum(Total_65ww) AS 'Total_65ww'
+
+
+from cte_wlmds_wl
+group by
+
+DerWeekEnding
+
+,[Data_source]
+,Prov_or_Comm
+,Organisation_Code
+,Measure
+,Treatment_Function_Code
