@@ -1,4 +1,4 @@
-# {PROJECT NAME}
+# WLMDS Staging Tables 
 ## NHS England South West Intelligence and Insights
 
 ### About the Project
@@ -6,7 +6,7 @@
 {ADD EXPERIMENTAL STATUS BADGE IF PROJECT IS IN DEVELOPMENT}
 [![status: experimental](https://github.com/GIScience/badges/raw/master/status/experimental.svg)](https://github.com/GIScience/badges#experimental)
 
-This repository holds code for the {PROJECT NAME} {SHORT DESCRIPTION}
+This repository holds code for the WLMDS Staging Tables - pulling the data for these and uploading into SWPAT table for use
 
 _**Note:** Only public or fake data are shared in this repository._
 
@@ -15,19 +15,12 @@ _**Note:** Only public or fake data are shared in this repository._
 - The main code is found in the root of the repository (see Usage below for more information)
 - The accompanying [report](./reports/report.pdf) is also available in the `reports` folder
 - More information about the code usage can be found in the [model card](./model_card.md)
-- {OTHER REPO STRUCTURE}
+
 
 ### Built With
 
-{LIST SOFTWARE USED TO CREATE PROJECT}
-
 [R Studio](http://www.rstudio.com/.)  
-[R Statistical Software](https://www.R-project.org/.)  
 [SQL SSMS](https://learn.microsoft.com/en-us/sql/ssms/download-sql-server-management-studio-ssms?view=sql-server-ver16)  
-[!Python v3.8](https://www.python.org/downloads/release/python-380/)  
-
-- {LIST OF MAIN PACKAGE VERSIONS}
-
 
 ### Getting Started
 
@@ -37,30 +30,11 @@ To get a local copy up and running follow these simple steps.
 
 To clone the repo:
 
-`git clone https://github.com/nhsx/{REPO NAME}`
-
-{ADDITIONAL TECHNICAL SUPPORT AND NEEDS} 
-
-### Usage
-{DESCRIPTION OF CODE}
-{DESCRIPTION OF PROCESS AND TECHNIQUES UTILISED}
-{METHODOLOGY USED}
-
-#### Outputs
-{LIST AND DESCRIPTION OF OUTPUTS}
-
-{NOTES ON REPRODUCIBILITY OF RESULTS}
-
-#### Datasets
-{DESCRIPTION AND LINKS TO DATASETS}
-
-{LINK TO FAKE DATA TO SUPPORT INITAIL CODE RUNS}
-
-### Roadmap
-
-See the {LINK TO REPO ISSUES} for a list of proposed features (and known issues).
+`git clone https://github.com/nhsx/WLMDS-Staging-Tables`
 
 ### Contributing
+
+Thank you Andy Blews for creating the SQL code. 
 
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
